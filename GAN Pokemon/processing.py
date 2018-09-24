@@ -1,6 +1,8 @@
 ''' 
 Generating new kinds of pokemons using GAN 
 codes from https://github.com/llSourcell/Pokemon_GAN/blob/master/pokeGAN.py
+
+utils from https://github.com/llSourcell/Pokemon_GAN/blob/master/utils.py	
 '''
 
 import os 
