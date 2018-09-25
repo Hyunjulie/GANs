@@ -5,7 +5,9 @@
 import tensorflow as tf 
 import numpy as np 
 import argparse 
-import matplotlib
+import matplotlib 
+from string import ascii_lowercase
+import random
 from tensorflow.examples.tutorials.mnist import input_data
 #from helper import Helper as H 
 
@@ -164,24 +166,51 @@ class DCGAN(object):
 		labels_real = np.zeros((batch_size, 2), dtype=np.float32)
 		labels_real[:, 0] = 1.0
 
-		for e in range(epochs):
+		for i in range(epochs):
 			for run in range(runs_per_epoch):
 				#MNIST training images 
 				train_images, test_images = mnist.train.next_batch(batch_size)
 				train_images = train_images.reshape((-1, 28, 28, 1)) * 2.0 - 1.0
 
-				#
+				#Training Discrimator on real images 
+				d_r_train, d_r_cost, debug_y_d_r, debug_d_r = self.session.run([self.d_train, self.d_loss, self.Y, self.D], feed_dict={self.X: train_images, self.Y=labels_real})
 
+				#Generate G(z) - random noise
+				z = np.random.standard_normal((batch_size, 100)).astype(np.float32)
+				gen_images = self.session.run(self.G, feed_dict={self.Z: z})
 
+				#Training Discriminator on fake images 
+				d_f_train, d_f_cost, debug_y_d_f, debug_d_f = self.session.run([self.d_train, self.d_loss, self.Y, self.D], feed_dict={self.X: gen_images, self.Y: labels_fake})
 
+				#Training Generator
+				g_train, g_cost, debug_y_g, debug_g, debug_dg = self.session.run([self.g_train, self.g_loss, self.Y, self.G, self.D_], feed_dict={self.Z: z, self.Y: labels_real})
 
-
-
-
+				if run% 50 == 0: 
+					print()
+					print("[epoch {:>5} | run {:>5}] {:>20} : {:>10.4f}".format(i, run, "D real", d_r_cost))
+					print("[epoch {:>5} | run {:>5}] {:>20} : {:>10.4f}".format(i, run, "D fake", d_f_cost))
+					print("[epoch {:>5} | run {:>5}] {:>20} : {:>10.4f}".format(i, run, "G", g_cost))
+			
+			print()
+			print("Saving model to {}".format(self.model_save_path))
+			self.saver.save(self.session, self.model_save_path)
+			print("Finished")
 
 	#Generate images
 	def test(self): 
+		self.saver.restore(self.session, self.model_save_path)
+		z = np.random.standard_normal((args.batch_size, 100)).astype(np.float32)
+		gen_imags = self.session.run(self.G, feed_dict={self.Z: z })
 
+		plot_title = "Model's Generated Image"
+		file_name = "img_generated_{}.jpg".format(get_random_string(5))
+		print()
+		print("Image Destination: {}".format(args.img_save_path + fname))
+		
+
+	def get_random_string(length):
+		chars = ascii_lowercase + "0123456789"
+		return "".join(random.choices(chars, k=length))
 
 
 if __name__ == "__main__":
